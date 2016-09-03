@@ -13,7 +13,7 @@ import (
 
 var curl http.Client
 
-func main() {
+func _main() {
 
 	curl = http.Client{
 		Timeout: time.Duration(time.Second * 5),
@@ -43,6 +43,8 @@ func main() {
 	//u.Host = "beforydeath.ru"
 	log.Println(u.String())
 	log.Println(get(u.String()))
+
+
 }
 
 func get(url string) int {
