@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 	"strings"
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"net/url"
 	"io/ioutil"
 	"compress/gzip"
@@ -19,7 +19,7 @@ func _main() {
 		Timeout: time.Duration(time.Second * 5),
 	}
 
-	u, err := url.Parse("http://beforydeath.ru")
+	u, err := url.Parse("/beforydeath.ru")
 	//u, err := url.Parse("http://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-manual-325462.pdf")
 	log.Println(err)
 	log.Println(u.Host)
@@ -42,6 +42,8 @@ func _main() {
 
 	//u.Host = "beforydeath.ru"
 	log.Println(u.String())
+	return
+
 	log.Println(get(u.String()))
 
 
