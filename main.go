@@ -5,51 +5,85 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"encoding/json"
-	"net/url"
-	"errors"
+	"os"
+	"bytes"
 )
+
+var Storage = make(Items)
+var Stack stack
 
 func main() {
 
-	link := flag.String("link", "", "Url link")
+	startLink := flag.String("link", "", "Url link")
 	flag.Parse()
 
-	if *link == "" {
-		log.Error("Provide a url or domain: -link=arg")
+	if *startLink == "" {
+		log.Fatal("Provide a url or domain: -link=arg")
 	}
 
-	l, err := NormalizeLink(*link)
+	u, err := SchemeLink(*startLink)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = HostLink(u)
+	if err != nil {
+		log.Fatal(err)
+	}
+	scheme = u.Scheme
+	domain = u.Host
+
+	err = os.MkdirAll("download/" + domain, 0777)
 	if err != nil {
 		log.Error(err)
 	}
-	log.Info(l)
 
-	return
+	//Read("download/" + domain + "/list.json", &Storage)
 
-	//Stack := stack{}
+	Storage.Add(u.String())
+	log.Info(Storage)
 
-	Storage := make(storage)
-	Read("store.json", &Storage)
+	for k, v := range Storage {
+		if v.Status.Code == 0 {
+			Stack.Push(k)
+		}
+	}
+	log.Info(Stack)
 
+	for {
+		if h := Stack.Pop(); h != "" {
+			log.Info(h)
+
+			boby, err := Get(Storage[h])
+			if err != nil {
+				log.Error(err)
+			}
+			log.Info(Storage[h].Url)
+
+			if boby != nil {
+
+				b, err := ioutil.ReadAll(boby)
+				if err == nil {
+					boby1 := ioutil.NopCloser(bytes.NewBuffer(b))
+					crawl(boby1)
+
+					err = SaveGzip(b, "download/" + domain + "/" + h + ".gz")
+					if err != nil {
+						log.Error(err)
+					}
+
+				} else {
+					log.Error(err)
+				}
+			}
+
+		} else {
+			break
+		}
+	}
+
+	Save("download/" + domain + "/list.json", Storage)
 	log.Info("end")
-}
-
-func NormalizeLink(l string) (link string, err error) {
-	u, err := url.Parse(l)
-
-	if u.Scheme == "" {
-		u.Scheme = "http"
-	}
-
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return link, errors.New("Scheme not http")
-	}
-
-	if u.Host == "" {
-		return link, errors.New("Host nil")
-	}
-	link = u.String()
-	return
 }
 
 func Read(filename string, st interface{}) error {
@@ -65,3 +99,20 @@ func Read(filename string, st interface{}) error {
 	}
 	return nil
 }
+
+func Save(filename string, st interface{}) error {
+	log.Infof("Save JSON file: %v", filename)
+	fo, err := os.Create(filename)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	defer fo.Close()
+	e := json.NewEncoder(fo)
+	if err = e.Encode(st); err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
