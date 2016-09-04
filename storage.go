@@ -16,6 +16,7 @@ type Link struct {
 
 type status struct {
 	Code     int
+	ContentType string
 	DataTime time.Time
 }
 

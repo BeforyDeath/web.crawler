@@ -6,20 +6,20 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"strings"
 	"io"
+	"errors"
 )
 
 var curl http.Client
 
 func init() {
 	curl = http.Client{
-		Timeout: time.Duration(time.Second * 30),
+		Timeout: time.Duration(time.Second * 5),
 	}
 	log.Info("init curl")
 }
 
 func Get(l *Link) (io.ReadCloser, error) {
 	res, err := curl.Get(l.Url)
-
 	if err != nil {
 		if strings.Contains(err.Error(), "no such host") {
 			l.Status.Code = http.StatusBadRequest
@@ -32,9 +32,14 @@ func Get(l *Link) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	log.Info(res.Header.Get("Content-Type"))
-
+	l.Status.ContentType = res.Header.Get("Content-Type")
 	l.Status.Code = res.StatusCode
 	l.Status.DataTime = time.Now()
+
+	if !strings.Contains(l.Status.ContentType, "html") && !strings.Contains(l.Status.ContentType, "javascript") && !strings.Contains(l.Status.ContentType, "css") {
+		l.Status.Code = http.StatusNotExtended
+		return nil, errors.New("Not supported: " + l.Status.ContentType)
+	}
+
 	return res.Body, nil
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"bytes"
+	"io"
 )
 
 var Storage = make(Items)
@@ -38,10 +39,9 @@ func main() {
 		log.Error(err)
 	}
 
-	//Read("download/" + domain + "/list.json", &Storage)
+	Read("download/" + domain + "/list.json", &Storage)
 
 	Storage.Add(u.String())
-	log.Info(Storage)
 
 	for k, v := range Storage {
 		if v.Status.Code == 0 {
@@ -58,32 +58,42 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
+
 			log.Info(Storage[h].Url)
 
 			if boby != nil {
-
-				b, err := ioutil.ReadAll(boby)
-				if err == nil {
-					boby1 := ioutil.NopCloser(bytes.NewBuffer(b))
-					crawl(boby1)
-
-					err = SaveGzip(b, "download/" + domain + "/" + h + ".gz")
-					if err != nil {
-						log.Error(err)
-					}
-
-				} else {
-					log.Error(err)
-				}
+				BodyRead(boby, h)
 			}
 
 		} else {
 			break
 		}
+
+		//Save("download/" + domain + "/list.json", Storage)
+		//return
 	}
 
-	Save("download/" + domain + "/list.json", Storage)
 	log.Info("end")
+}
+
+func BodyRead(boby io.ReadCloser, hash string) {
+	defer boby.Close()
+
+	b, err := ioutil.ReadAll(boby)
+	if err == nil {
+
+		boby_tmp := ioutil.NopCloser(bytes.NewBuffer(b))
+		crawl(boby_tmp)
+		Save("download/" + domain + "/list.json", Storage)
+
+		err = SaveGzip(b, "download/" + domain + "/" + hash + ".gz")
+		if err != nil {
+			log.Error(err)
+		}
+
+	} else {
+		log.Error(err)
+	}
 }
 
 func Read(filename string, st interface{}) error {

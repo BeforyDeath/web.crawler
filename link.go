@@ -68,11 +68,16 @@ func getHref(t html.Token) (ok bool, href string) {
 			href = a.Val
 			ok = true
 		}
+		if a.Key == "src" {
+			href = a.Val
+			ok = true
+		}
 	}
 	return
 }
 
-func crawl(b io.Reader) {
+func crawl(b io.ReadCloser) {
+	defer b.Close()
 
 	z := html.NewTokenizer(b)
 
@@ -85,7 +90,16 @@ func crawl(b io.Reader) {
 		case tt == html.StartTagToken:
 			t := z.Token()
 
-			isAnchor := t.Data == "a"
+			isAnchor := false
+			switch t.Data {
+			case "a":
+				isAnchor = true
+			case "link":
+				isAnchor = true
+			case "script":
+				isAnchor = true
+			}
+
 			if !isAnchor {
 				continue
 			}
@@ -97,9 +111,8 @@ func crawl(b io.Reader) {
 
 			u, err := NormalizeLink(l)
 			if err != nil {
-				log.Error(err)
+				//log.Error(err)
 			} else {
-
 				h := Storage.Add(u.String())
 				if h != "" {
 					Stack.Push(h)
