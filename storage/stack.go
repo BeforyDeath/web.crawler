@@ -3,7 +3,7 @@ package storage
 var Stack stack
 
 type stack struct {
-	nodes []string
+	Nodes []string
 }
 
 func (s *stack) Init() {
@@ -15,13 +15,13 @@ func (s *stack) Init() {
 }
 
 func (s *stack) Push(key string) {
-	s.nodes = append(s.nodes, key)
+	s.Nodes = append(s.Nodes, key)
 }
 
 func (s *stack) Pop() (hash string) {
-	if len(s.nodes) == 0 {
+	if len(s.Nodes) == 0 {
 		return
 	}
-	hash, s.nodes = s.nodes[len(s.nodes)-1], s.nodes[:len(s.nodes)-1]
+	hash, s.Nodes = s.Nodes[len(s.Nodes)-1], s.Nodes[:len(s.Nodes)-1]
 	return
 }

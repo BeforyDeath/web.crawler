@@ -88,7 +88,7 @@ func Crawl(body io.ReadCloser) (items storage.ItemsType) {
 
 			item, err := NormalizeItem(link)
 			if err != nil {
-				log.Error(err)
+				log.Warn(err)
 			} else {
 				items.Add(item)
 			}
