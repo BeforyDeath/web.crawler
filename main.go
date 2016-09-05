@@ -5,14 +5,14 @@ import (
 	"flag"
 	"io/ioutil"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 
 	"github.com/BeforyDeath/web.crawler/core"
 	"github.com/BeforyDeath/web.crawler/parser"
 	"github.com/BeforyDeath/web.crawler/storage"
 	log "github.com/Sirupsen/logrus"
-	"strings"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 
 	var path string = "download/" + core.Config.Domain
 
-	err = os.MkdirAll(path + "/files/", 0777)
+	err = os.MkdirAll(path+"/files/", 0777)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func main() {
 					storage.Items.Marge(items)
 
 					fileGz := hash + storage.FileType[strings.Split(item.Status.ContentType, ";")[0]]
-					err = storage.Gzip(b, path + "/files/" + fileGz + ".gz")
+					err = storage.Gzip(b, path+"/files/"+fileGz+".gz")
 					if err != nil {
 						log.Error(err)
 					} else {
