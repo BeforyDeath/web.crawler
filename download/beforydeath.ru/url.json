@@ -1,0 +1,26 @@
+{
+  "3815c18971c62456d943506e22ef6afb": {
+    "Url": "http://beforydeath.ru",
+    "Status": {
+      "Code": 200,
+      "ContentType": "text/html",
+      "DataTime": "2016-09-05T04:02:05.07625318+03:00"
+    }
+  },
+  "76cf21f6339629fd2eff831448e319ce": {
+    "Url": "http://beforydeath.ru/logo.js",
+    "Status": {
+      "Code": 200,
+      "ContentType": "application/javascript",
+      "DataTime": "2016-09-05T04:02:05.180292386+03:00"
+    }
+  },
+  "b484dd15307a3c3b009a4d5679075226": {
+    "Url": "http://beforydeath.ru/logo.css",
+    "Status": {
+      "Code": 200,
+      "ContentType": "text/css",
+      "DataTime": "2016-09-05T04:02:05.117470946+03:00"
+    }
+  }
+}

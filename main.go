@@ -1,128 +1,79 @@
 package main
 
 import (
-	"flag"
-	log "github.com/Sirupsen/logrus"
-	"io/ioutil"
-	"encoding/json"
-	"os"
 	"bytes"
-	"io"
-)
+	"flag"
+	"io/ioutil"
+	"os"
 
-var Storage = make(Items)
-var Stack stack
+	"github.com/BeforyDeath/web.crawler/core"
+	"github.com/BeforyDeath/web.crawler/parser"
+	"github.com/BeforyDeath/web.crawler/storage"
+	log "github.com/Sirupsen/logrus"
+)
 
 func main() {
 
-	startLink := flag.String("link", "", "Url link")
+	startUrl := flag.String("url", "", "Url link")
 	flag.Parse()
 
-	if *startLink == "" {
-		log.Fatal("Provide a url or domain: -link=arg")
+	if *startUrl == "" {
+		log.Fatal("Provide a url or domain: -url=arg")
 	}
 
-	u, err := SchemeLink(*startLink)
+	item, err := parser.NormalizeItem(*startUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = HostLink(u)
+	var path string = "download/" + core.Config.Domain
+
+	err = os.MkdirAll(path+"/files/", 0777)
 	if err != nil {
 		log.Fatal(err)
 	}
-	scheme = u.Scheme
-	domain = u.Host
 
-	err = os.MkdirAll("download/" + domain, 0777)
-	if err != nil {
-		log.Error(err)
-	}
+	storage.Items.Read(path + "/url.json")
+	defer func() {
+		log.Infof("Save %v urls", len(storage.Items))
+		storage.Items.Save(path + "/url.json")
+	}()
 
-	Read("download/" + domain + "/list.json", &Storage)
+	storage.Items.Add(item)
 
-	Storage.Add(u.String())
-
-	for k, v := range Storage {
-		if v.Status.Code == 0 {
-			Stack.Push(k)
-		}
-	}
-	log.Info(Stack)
+	storage.Stack.Init()
 
 	for {
-		if h := Stack.Pop(); h != "" {
-			log.Info(h)
+		hash := storage.Stack.Pop()
+		if hash == "" {
+			log.Info("End")
+			break
+		}
 
-			boby, err := Get(Storage[h])
+		if item, ok := storage.Items[hash]; ok {
+			body, err := storage.Curl(item)
 			if err != nil {
 				log.Error(err)
 			}
 
-			log.Info(Storage[h].Url)
+			if body != nil {
 
-			if boby != nil {
-				BodyRead(boby, h)
+				b, err := parser.Reader(body)
+				if err != nil {
+					log.Error(err)
+					break
+				}
+
+				items := parser.Crawl(ioutil.NopCloser(bytes.NewBuffer(b)))
+				storage.Items.Marge(items)
+
+				fileGz := hash + storage.FileType[item.Status.ContentType]
+				err = storage.Gzip(b, path+"/files/"+fileGz+".gz")
+				if err != nil {
+					log.Error(err)
+				}
+
 			}
-
-		} else {
-			break
 		}
-
-		//Save("download/" + domain + "/list.json", Storage)
-		//return
-	}
-
-	log.Info("end")
-}
-
-func BodyRead(boby io.ReadCloser, hash string) {
-	defer boby.Close()
-
-	b, err := ioutil.ReadAll(boby)
-	if err == nil {
-
-		boby_tmp := ioutil.NopCloser(bytes.NewBuffer(b))
-		crawl(boby_tmp)
-		Save("download/" + domain + "/list.json", Storage)
-
-		err = SaveGzip(b, "download/" + domain + "/" + hash + ".gz")
-		if err != nil {
-			log.Error(err)
-		}
-
-	} else {
-		log.Error(err)
 	}
 }
-
-func Read(filename string, st interface{}) error {
-	log.Infof("Read JSON file: %v", filename)
-	f, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	if err = json.Unmarshal(f, &st); err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-
-func Save(filename string, st interface{}) error {
-	log.Infof("Save JSON file: %v", filename)
-	fo, err := os.Create(filename)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	defer fo.Close()
-	e := json.NewEncoder(fo)
-	if err = e.Encode(st); err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-
