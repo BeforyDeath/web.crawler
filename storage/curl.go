@@ -30,13 +30,14 @@ func Curl(i *Item) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	i.Status.ContentType = res.Header.Get("Content-Type")
-	i.Status.Code = res.StatusCode
+	ContentType := res.Header.Get("Content-Type")
 	i.Status.DataTime = time.Now()
+	i.Status.ContentType = ContentType
+	i.Status.Code = res.StatusCode
 
-	if !strings.Contains(i.Status.ContentType, "html") && !strings.Contains(i.Status.ContentType, "javascript") && !strings.Contains(i.Status.ContentType, "css") {
+	if _, ok := FileType[strings.Split(ContentType, ";")[0]]; !ok {
 		i.Status.Code = http.StatusNotExtended
-		return nil, errors.New("Not supported: " + i.Status.ContentType)
+		return nil, errors.New("Not supported: " + ContentType)
 	}
 
 	return res.Body, nil

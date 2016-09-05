@@ -17,5 +17,5 @@
 20:30 start
 22:30 pause
 00:00 start
-04:00 pause
+04:30 pause
 

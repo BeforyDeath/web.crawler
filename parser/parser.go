@@ -73,11 +73,7 @@ func Crawl(body io.ReadCloser) (items storage.ItemsType) {
 
 			isAnchor := false
 			switch t.Data {
-			case "a":
-				isAnchor = true
-			case "link":
-				isAnchor = true
-			case "script":
+			case "a", "link", "script":
 				isAnchor = true
 			}
 
@@ -85,20 +81,16 @@ func Crawl(body io.ReadCloser) (items storage.ItemsType) {
 				continue
 			}
 
-			ok, l := getHref(t)
+			ok, link := getHref(t)
 			if !ok {
 				continue
 			}
 
-			item, err := NormalizeItem(l)
+			item, err := NormalizeItem(link)
 			if err != nil {
 				log.Error(err)
 			} else {
-				h := items.Add(item)
-				if h != "" {
-					log.Info(h)
-				}
-
+				items.Add(item)
 			}
 		}
 	}
@@ -107,11 +99,7 @@ func Crawl(body io.ReadCloser) (items storage.ItemsType) {
 
 func getHref(t html.Token) (ok bool, href string) {
 	for _, a := range t.Attr {
-		if a.Key == "href" {
-			href = a.Val
-			ok = true
-		}
-		if a.Key == "src" {
+		if a.Key == "href" || a.Key == "src" {
 			href = a.Val
 			ok = true
 		}

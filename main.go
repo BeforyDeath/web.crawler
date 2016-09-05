@@ -10,6 +10,7 @@ import (
 	"github.com/BeforyDeath/web.crawler/parser"
 	"github.com/BeforyDeath/web.crawler/storage"
 	log "github.com/Sirupsen/logrus"
+	"strings"
 )
 
 func main() {
@@ -57,7 +58,7 @@ func main() {
 			}
 
 			if body != nil {
-
+				log.Infof("Edit :%v", item.Url)
 				b, err := parser.Reader(body)
 				if err != nil {
 					log.Error(err)
@@ -67,7 +68,7 @@ func main() {
 				items := parser.Crawl(ioutil.NopCloser(bytes.NewBuffer(b)))
 				storage.Items.Marge(items)
 
-				fileGz := hash + storage.FileType[item.Status.ContentType]
+				fileGz := hash + storage.FileType[strings.Split(item.Status.ContentType, ";")[0]]
 				err = storage.Gzip(b, path+"/files/"+fileGz+".gz")
 				if err != nil {
 					log.Error(err)
